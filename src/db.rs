@@ -2,9 +2,9 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::{
-    bson::{doc, oid::ObjectId},
+    bson::{doc, oid::ObjectId, Document},
     options::{ClientOptions, FindOptions},
-    Client, Cursor,
+    Client, Collection, Cursor,
 };
 use serde::{Deserialize, Serialize};
 
@@ -51,11 +51,7 @@ impl DB {
             "added_at": mongodb::bson::DateTime::from_chrono(Utc::now()),
         };
 
-        self.client
-            .database(DB_NAME)
-            .collection(COLLECTION)
-            .insert_one(doc, None)
-            .await?;
+        self.get_collection().insert_one(doc, None).await?;
 
         info!(target: "mongodb", "todo created");
 
@@ -65,9 +61,7 @@ impl DB {
     pub async fn delete_todo(&self, id: &str) -> Result<()> {
         let oid = ObjectId::parse_str(id)?;
 
-        self.client
-            .database(DB_NAME)
-            .collection::<Todo>(COLLECTION)
+        self.get_collection::<Document>()
             .delete_one(doc! {"_id": oid}, None)
             .await?;
 
@@ -79,12 +73,7 @@ impl DB {
     pub async fn fetch_todos(&self) -> Result<Vec<Todo>> {
         let options = FindOptions::builder().sort(doc! { "added_at": 1 }).build();
 
-        let mut cursor: Cursor<Todo> = self
-            .client
-            .database(DB_NAME)
-            .collection(COLLECTION)
-            .find(None, options)
-            .await?;
+        let mut cursor: Cursor<Todo> = self.get_collection().find(None, options).await?;
 
         info!(target: "mongodb", "todos fetched");
 
@@ -94,5 +83,9 @@ impl DB {
         }
 
         Ok(result)
+    }
+
+    fn get_collection<T>(&self) -> Collection<T> {
+        self.client.database(DB_NAME).collection(COLLECTION)
     }
 }
