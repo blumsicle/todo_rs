@@ -14,7 +14,8 @@ const COLLECTION: &str = "todo";
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Todo {
     #[serde(rename = "_id")]
-    pub id: ObjectId,
+    #[serde(with = "mongodb::bson::serde_helpers::hex_string_as_object_id")]
+    pub id: String,
 
     pub entry: String,
 
@@ -63,6 +64,20 @@ impl DB {
             .await?;
 
         info!(target: "mongodb", "todo created");
+
+        Ok(())
+    }
+
+    pub async fn delete_todo(&self, id: &str) -> Result<()> {
+        let oid = ObjectId::parse_str(id)?;
+
+        self.client
+            .database(DB_NAME)
+            .collection::<Todo>(COLLECTION)
+            .delete_one(doc! {"_id": oid}, None)
+            .await?;
+
+        info!(target: "mongodb", "todo deleted");
 
         Ok(())
     }

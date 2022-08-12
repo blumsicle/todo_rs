@@ -24,8 +24,11 @@ async fn main() -> Result<()> {
     let todos = db.fetch_todos().await?;
     for todo in todos {
         let local: DateTime<Local> = DateTime::from(todo.added_at);
+        println!("id: {}", todo.id);
         println!("todo: {}", todo.entry);
         println!("added at: {}", local);
+
+        db.delete_todo(&todo.id).await?;
     }
 
     Ok(())
