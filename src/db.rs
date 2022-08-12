@@ -23,12 +23,6 @@ pub struct Todo {
     pub added_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct TodoRequest {
-    entry: String,
-    added_at: mongodb::bson::DateTime,
-}
-
 pub struct DB {
     pub client: Client,
 }
