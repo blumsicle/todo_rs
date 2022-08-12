@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use futures::TryStreamExt;
 use mongodb::{
     bson::{doc, oid::ObjectId},
-    options::ClientOptions,
+    options::{ClientOptions, FindOptions},
     Client, Cursor,
 };
 use serde::{Deserialize, Serialize};
@@ -83,11 +83,13 @@ impl DB {
     }
 
     pub async fn fetch_todos(&self) -> Result<Vec<Todo>> {
+        let options = FindOptions::builder().sort(doc! { "added_at": 1 }).build();
+
         let mut cursor: Cursor<Todo> = self
             .client
             .database(DB_NAME)
             .collection(COLLECTION)
-            .find(None, None)
+            .find(None, options)
             .await?;
 
         info!(target: "mongodb", "todos fetched");
